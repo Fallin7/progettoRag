@@ -9,7 +9,7 @@
         </nav>
         <main class="content">
             <h1>Documents</h1>
-            <DocumentUpload @uploaded="onUploaded" />
+            <DocumentsDocumentUpload @uploaded="onUploaded" />
 
             <section class="doc-list">
                 <h2>Indexed documents</h2>

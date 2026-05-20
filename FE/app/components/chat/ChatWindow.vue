@@ -2,7 +2,7 @@
     <div class="chat-window">
         <div class="messages" ref="messagesEl">
             <p v-if="!messages.length" class="empty">Upload a document then start asking questions.</p>
-            <MessageBubble v-for="(msg, i) in messages" :key="i" :message="msg" />
+            <ChatMessageBubble v-for="(msg, i) in messages" :key="i" :message="msg" />
             <div v-if="loading" class="bubble assistant loading">Thinking…</div>
         </div>
         <div class="input-row">
