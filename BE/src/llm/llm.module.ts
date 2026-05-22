@@ -4,6 +4,7 @@ import { ChatOpenAI, OpenAIEmbeddings } from '@langchain/openai';
 import { ChatOllama, OllamaEmbeddings } from '@langchain/ollama';
 import { LLM_INSTANCE, EMBEDDINGS_INSTANCE } from './llm.tokens';
 
+//Initialize LLM and Embeddings providers based on configuration, and make them globally available via NestJS's dependency injection system.
 @Global()
 @Module({
   providers: [

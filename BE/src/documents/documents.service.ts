@@ -3,18 +3,23 @@ import { RecursiveCharacterTextSplitter } from '@langchain/textsplitters';
 import { IndexingService } from '../indexing/indexing.service';
 import { DocumentResponseDto } from './dto/document-response.dto';
 import { PDFParse } from 'pdf-parse';
+import { DocumentsPreprocessingService } from './documents.preprocessing.service';
 
 @Injectable()
 export class DocumentsService {
   private readonly logger = new Logger(DocumentsService.name);
   private readonly uploadedDocuments: DocumentResponseDto[] = [];
   private readonly splitter = new RecursiveCharacterTextSplitter({
-    chunkSize: 1000,
-    chunkOverlap: 200,
+    chunkSize: 1000, // Dimensione massima di ogni chunk
+    chunkOverlap: 200, // Sovrapposizione tra chunk per mantenere il contesto
   });
 
-  constructor(private readonly indexingService: IndexingService) {}
+  constructor(
+    private readonly indexingService: IndexingService,
+    private readonly preprocessingService: DocumentsPreprocessingService,
+  ) {}
 
+  //Funzione che gestisce l'upload dei documenti, supportando PDF e TXT, estraendo il testo, suddividendolo in chunk, indicizzandolo e restituendo i metadati del documento caricato.
   async processUpload(file: Express.Multer.File): Promise<DocumentResponseDto> {
     const name = file.originalname.toLowerCase();
     let text: string;
@@ -32,8 +37,10 @@ export class DocumentsService {
       throw new BadRequestException('The document appears to be empty.');
     }
 
+    const cleanedText = this.preprocessingService.preprocessText(text);
+
     const chunks = await this.splitter.createDocuments(
-      [text],
+      [cleanedText],
       [{ source: file.originalname, fileSize: file.size }],
     );
 
