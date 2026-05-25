@@ -1,14 +1,23 @@
-import { Injectable, BadRequestException, Logger } from '@nestjs/common';
+import {
+  Injectable,
+  BadRequestException,
+  Logger,
+  OnModuleInit,
+} from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { RecursiveCharacterTextSplitter } from '@langchain/textsplitters';
 import { IndexingService } from '../indexing/indexing.service';
 import { DocumentResponseDto } from './dto/document-response.dto';
 import { PDFParse } from 'pdf-parse';
 import { DocumentsPreprocessingService } from './documents.preprocessing.service';
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from 'fs';
+import { join, dirname } from 'path';
 
 @Injectable()
-export class DocumentsService {
+export class DocumentsService implements OnModuleInit {
   private readonly logger = new Logger(DocumentsService.name);
   private readonly uploadedDocuments: DocumentResponseDto[] = [];
+  private readonly metadataPath: string;
   private readonly splitter = new RecursiveCharacterTextSplitter({
     chunkSize: 1000, // Dimensione massima di ogni chunk
     chunkOverlap: 200, // Sovrapposizione tra chunk per mantenere il contesto
@@ -17,7 +26,47 @@ export class DocumentsService {
   constructor(
     private readonly indexingService: IndexingService,
     private readonly preprocessingService: DocumentsPreprocessingService,
-  ) {}
+    private readonly configService: ConfigService,
+  ) {
+    const indexPath =
+      this.configService.get<string>('documentsIndexPath') ??
+      './documents_index';
+    this.metadataPath = join(indexPath, 'documents-metadata.json');
+  }
+
+  onModuleInit() {
+    if (existsSync(this.metadataPath)) {
+      try {
+        const raw = readFileSync(this.metadataPath, 'utf-8');
+        const saved = JSON.parse(raw) as DocumentResponseDto[];
+        this.uploadedDocuments.push(...saved);
+        this.logger.log(
+          `Loaded ${saved.length} document(s) metadata from "${this.metadataPath}"`,
+        );
+      } catch (err) {
+        this.logger.warn(`Failed to load documents metadata: ${err}`);
+      }
+    } else {
+      this.saveMetadata();
+      this.logger.log(`Created empty metadata file at "${this.metadataPath}"`);
+    }
+  }
+
+  private saveMetadata(): void {
+    try {
+      const dir = dirname(this.metadataPath);
+      if (!existsSync(dir)) {
+        mkdirSync(dir, { recursive: true });
+      }
+      writeFileSync(
+        this.metadataPath,
+        JSON.stringify(this.uploadedDocuments, null, 2),
+        'utf-8',
+      );
+    } catch (err) {
+      this.logger.warn(`Failed to save documents metadata: ${err}`);
+    }
+  }
 
   //Funzione che gestisce l'upload dei documenti, supportando PDF e TXT, estraendo il testo, suddividendolo in chunk, indicizzandolo e restituendo i metadati del documento caricato.
   async processUpload(file: Express.Multer.File): Promise<DocumentResponseDto> {
@@ -65,6 +114,7 @@ export class DocumentsService {
     };
 
     this.uploadedDocuments.push(response);
+    this.saveMetadata();
     return response;
   }
 

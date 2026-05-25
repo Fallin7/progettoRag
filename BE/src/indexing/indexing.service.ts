@@ -17,7 +17,8 @@ export class IndexingService implements OnModuleInit {
     private readonly configService: ConfigService,
   ) {
     this.indexPath =
-      this.configService.get<string>('faissIndexPath') ?? './faiss_index';
+      this.configService.get<string>('documentsIndexPath') ??
+      './documents_index';
   }
 
   async onModuleInit() {

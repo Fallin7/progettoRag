@@ -13,5 +13,5 @@ export default () => ({
     model: process.env.OLLAMA_MODEL ?? 'llama3',
     embeddingsModel: process.env.OLLAMA_EMBEDDINGS_MODEL ?? 'nomic-embed-text',
   },
-  faissIndexPath: process.env.FAISS_INDEX_PATH ?? './faiss_index',
+  documentsIndexPath: process.env.DOCUMENTS_INDEX_PATH ?? './documents_index',
 });
