@@ -9,16 +9,19 @@ import { LLM_INSTANCE } from '../llm/llm.tokens';
 import { SendMessageDto } from './dto/send-message.dto';
 import { ChatResponseDto } from './dto/chat-response.dto';
 import { contextualizeQPrompt, qaPrompt } from './prompts';
+import { ChatPreprocService } from './chat.preproc.service';
 
 @Injectable()
 export class ChatService {
   private readonly logger = new Logger(ChatService.name);
   private readonly sessions = new Map<string, BaseMessage[]>();
   private readonly outputParser = new StringOutputParser();
+  private readonly k = 4;
 
   constructor(
     @Inject(LLM_INSTANCE) private readonly llm: BaseChatModel,
     private readonly indexingService: IndexingService,
+    private readonly chatPreprocService: ChatPreprocService,
   ) {}
 
   async sendMessage(dto: SendMessageDto): Promise<ChatResponseDto> {
@@ -36,7 +39,7 @@ export class ChatService {
 
     const history = this.sessions.get(sessionId) ?? [];
 
-    // Step 1 — Reformulate question as standalone when there is history
+    // Step 1 — Aggiungi contesto alla domanda in presenza di una cronologia, viene preprocessata per migliorare il retrieve.
     let standaloneQuestion = dto.message;
     if (history.length > 0) {
       standaloneQuestion = await contextualizeQPrompt
@@ -45,12 +48,15 @@ export class ChatService {
         .invoke({ input: dto.message, chat_history: history });
     }
 
-    // Step 2 — Retrieve relevant chunks
-    const retriever = this.indexingService.getRetriever(4);
+    // Step 2 — Recupera i documenti più rilevanti per la domanda.
+
+    standaloneQuestion =
+      this.chatPreprocService.preprocessQuery(standaloneQuestion);
+    const retriever = this.indexingService.getRetriever(this.k);
     const relevantDocs: Document[] = await retriever.invoke(standaloneQuestion);
     const contextText = relevantDocs.map((d) => d.pageContent).join('\n\n');
 
-    // Step 3 — Generate answer grounded in retrieved context
+    // Step 3 — Genera una risposta basata sul contesto recuperato
     const answer = await qaPrompt
       .pipe(this.llm)
       .pipe(this.outputParser)
@@ -60,7 +66,7 @@ export class ChatService {
         context: contextText,
       });
 
-    // Update session history
+    // Aggiorna la cronologia della sessione
     this.sessions.set(sessionId, [
       ...history,
       new HumanMessage(dto.message),

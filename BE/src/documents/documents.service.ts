@@ -36,12 +36,20 @@ export class DocumentsService {
     if (!text.trim()) {
       throw new BadRequestException('The document appears to be empty.');
     }
-
+    // Pulizia del testo per rimuovere spazi extra,
+    // normalizzare i caratteri e preservare i paragrafi,
+    // migliorando la qualità dei chunk generati e l'efficacia dell'indicizzazione.
     const cleanedText = this.preprocessingService.preprocessText(text);
 
     const chunks = await this.splitter.createDocuments(
       [cleanedText],
-      [{ source: file.originalname, fileSize: file.size }],
+      [
+        {
+          source: file.originalname,
+          fileSize: file.size,
+          uploadedAt: new Date().toISOString(),
+        },
+      ],
     );
 
     await this.indexingService.addDocuments(chunks);

@@ -9,7 +9,7 @@ export const qaPrompt = ChatPromptTemplate.fromMessages([
     `You are an assistant for question-answering tasks. \
 Use the following pieces of retrieved context to answer the question. \
 If the answer is not present in the provided context, say that the information is not available \
-in the uploaded documents. Keep the answer concise and accurate.
+in the uploaded documents. Keep the answer concise and accurate. \
 
 Context:
 {context}`,
