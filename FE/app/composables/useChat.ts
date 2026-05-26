@@ -19,20 +19,50 @@ export function useChat() {
     error.value = null;
 
     try {
-      const res = await $fetch<{
-        answer: string;
-        sessionId: string;
-        sources: string[];
-      }>(`${config.public.apiBase}/chat/message`, {
+      const response = await fetch(`${config.public.apiBase}/chat/stream`, {
         method: "POST",
-        body: { message: text, sessionId: sessionId.value },
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: text, sessionId: sessionId.value }),
       });
-      sessionId.value = res.sessionId;
-      messages.value.push({
-        role: "assistant",
-        content: res.answer,
-        sources: res.sources,
-      });
+
+      if (!response.ok || !response.body) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+
+      // Aggiunge subito il placeholder del messaggio assistente
+      messages.value.push({ role: "assistant", content: "", sources: [] });
+      const assistantIndex = messages.value.length - 1;
+
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+
+        buffer += decoder.decode(value, { stream: true });
+        const parts = buffer.split("\n\n");
+        buffer = parts.pop() ?? "";
+
+        for (const part of parts) {
+          if (!part.startsWith("data: ")) continue;
+          const payload = JSON.parse(part.slice(6)) as {
+            type: "meta" | "chunk" | "done";
+            sessionId?: string;
+            sources?: string[];
+            content?: string;
+          };
+          const assistantMsg = messages.value[assistantIndex];
+          if (!assistantMsg) continue;
+          if (payload.type === "meta") {
+            sessionId.value = payload.sessionId!;
+            assistantMsg.sources = payload.sources ?? [];
+          } else if (payload.type === "chunk") {
+            assistantMsg.content += payload.content ?? "";
+          }
+        }
+      }
     } catch (e: unknown) {
       const msg =
         (e as { data?: { message?: string }; message?: string })?.data
