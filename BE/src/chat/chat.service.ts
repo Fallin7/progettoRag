@@ -49,7 +49,7 @@ export class ChatService {
         .pipe(this.outputParser)
         .invoke({ input: dto.message, chat_history: history });
     }
-    // Step 2 — Recupera i documenti più rilevanti per la domanda.
+    // Step 2 — Preprocessa la domanda e recupera i documenti più rilevanti.
     standaloneQuestion =
       this.chatPreprocService.preprocessQuery(standaloneQuestion);
     const retriever = this.indexingService.getRetriever(this.k);
