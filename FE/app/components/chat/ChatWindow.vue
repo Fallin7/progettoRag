@@ -1,14 +1,14 @@
 <template>
     <div class="chat-window">
         <div class="messages" ref="messagesEl">
-            <p v-if="!messages.length" class="empty">Upload a document then start asking questions.</p>
+            <p v-if="!messages.length" class="empty">Scrivi una richiesta per il servizio conversazionale e-CARE.</p>
             <ChatMessageBubble v-for="(msg, i) in messages" :key="i" :message="msg" />
         </div>
         <div class="input-row">
-            <input v-model="inputText" type="text" placeholder="Ask something about your documents…"
+            <input v-model="inputText" type="text" placeholder="Chiedi informazioni su pazienti, alert, eventi o robot"
                 @keydown.enter="submit" :disabled="loading" />
-            <button class="btn-primary" @click="submit" :disabled="loading || !inputText.trim()">Send</button>
-            <button class="btn-secondary" @click="$emit('clear')" :disabled="loading">New chat</button>
+            <button class="btn-primary" @click="submit" :disabled="loading || !inputText.trim()">Invia</button>
+            <button class="btn-secondary" @click="$emit('clear')" :disabled="loading">Nuova chat</button>
         </div>
     </div>
 </template>

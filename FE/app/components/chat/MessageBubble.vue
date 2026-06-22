@@ -4,14 +4,18 @@
         <span v-else-if="message.role === 'assistant'" class="typing-loader">
             <span></span><span></span><span></span>
         </span>
-        <p v-if="message.sources?.length" class="sources">
-            📎 {{ message.sources.join(' · ') }}
+        <p v-if="message.warnings?.length" class="meta">
+            Avvisi: {{ message.warnings.join(' - ') }}
+        </p>
+        <p v-if="message.uiCommands?.length" class="meta">
+            Comandi UI: {{ message.uiCommands.map((command) => command.type).join(', ') }}
         </p>
     </div>
 </template>
 
 <script setup lang="ts">
 import type { Message } from '~/composables/useChat';
+
 defineProps({ message: { type: Object as () => Message, required: true } });
 </script>
 
@@ -40,7 +44,7 @@ defineProps({ message: { type: Object as () => Message, required: true } });
     border-bottom-left-radius: 2px;
 }
 
-.sources {
+.meta {
     margin-top: 6px;
     font-size: 0.75rem;
     opacity: 0.7;

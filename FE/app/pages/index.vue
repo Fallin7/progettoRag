@@ -1,10 +1,10 @@
 <template>
     <div class="page">
         <nav class="navbar">
-            <span class="brand">RAG Chat</span>
+            <span class="brand">e-CARE Chat</span>
             <div class="links">
-                <NuxtLink to="/">💬 Chat</NuxtLink>
-                <NuxtLink to="/documents">📄 Documents</NuxtLink>
+                <NuxtLink to="/">Chat</NuxtLink>
+                <NuxtLink to="/documents">Documenti</NuxtLink>
             </div>
         </nav>
         <main>
