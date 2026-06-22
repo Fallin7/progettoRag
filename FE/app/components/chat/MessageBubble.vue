@@ -7,6 +7,9 @@
         <p v-if="message.warnings?.length" class="meta">
             Avvisi: {{ message.warnings.join(' - ') }}
         </p>
+        <p v-if="message.intents?.length" class="meta">
+            Intent: {{ message.intents.join(', ') }}
+        </p>
         <p v-if="message.uiCommands?.length" class="meta">
             Comandi UI: {{ message.uiCommands.map((command) => command.type).join(', ') }}
         </p>

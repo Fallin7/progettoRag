@@ -1,9 +1,19 @@
 export interface Message {
   role: 'user' | 'assistant';
   content: string;
+  intents?: ConversationIntent[];
   warnings?: string[];
   uiCommands?: UiCommand[];
 }
+
+type ConversationIntent =
+  | 'PATIENT_SUMMARY'
+  | 'PATIENT_CARE_TEAM'
+  | 'PATIENT_EVENTS'
+  | 'PATIENT_ALERTS'
+  | 'ROBOTS_STATUS'
+  | 'START_CALL'
+  | 'UNKNOWN';
 
 interface UiCommand {
   type:
@@ -17,14 +27,8 @@ interface UiCommand {
 
 interface ConversationResponse {
   sessionId: string;
-  intent:
-    | 'PATIENT_SUMMARY'
-    | 'PATIENT_CARE_TEAM'
-    | 'PATIENT_EVENTS'
-    | 'PATIENT_ALERTS'
-    | 'ROBOTS_STATUS'
-    | 'START_CALL'
-    | 'UNKNOWN';
+  intent: ConversationIntent;
+  intents?: ConversationIntent[];
   message: string;
   uiCommands: UiCommand[];
   warnings?: string[];
@@ -34,6 +38,7 @@ type ConversationStreamEvent =
   | {
       type: 'meta';
       sessionId: string;
+      intents?: ConversationIntent[];
       uiCommands?: UiCommand[];
       warnings?: string[];
     }
@@ -157,6 +162,7 @@ export function useChat() {
 
     if (event.type === 'meta') {
       sessionId.value = event.sessionId;
+      assistantMessage.intents = event.intents;
       assistantMessage.warnings = event.warnings;
       assistantMessage.uiCommands = event.uiCommands;
       return;
@@ -168,6 +174,9 @@ export function useChat() {
     }
 
     sessionId.value = event.response.sessionId;
+    assistantMessage.intents = event.response.intents ?? [
+      event.response.intent,
+    ];
     assistantMessage.warnings = event.response.warnings;
     assistantMessage.uiCommands = event.response.uiCommands;
 
