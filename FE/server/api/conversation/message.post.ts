@@ -71,6 +71,7 @@ export default defineEventHandler(async (event): Promise<void> => {
   response.setHeader('Cache-Control', 'no-cache, no-transform');
   response.setHeader('Connection', 'keep-alive');
   response.setHeader('X-Accel-Buffering', 'no');
+  response.flushHeaders?.();
 
   const reader = upstreamResponse.body.getReader();
 
@@ -82,7 +83,12 @@ export default defineEventHandler(async (event): Promise<void> => {
         break;
       }
 
-      response.write(Buffer.from(value));
+      const canContinue = response.write(Buffer.from(value));
+      (response as typeof response & { flush?: () => void }).flush?.();
+
+      if (!canContinue) {
+        await new Promise<void>((resolve) => response.once('drain', resolve));
+      }
     }
   } finally {
     response.end();
